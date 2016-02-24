@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
     <script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
     <script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
-    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js"></script> 
     <style type="text/css">
     .ui-grid-a img {
         width: 100%;
@@ -62,8 +62,9 @@
                             <h2>{{lesson.title}}</h2>
                         </div>
                     </div>
-                    <p style="white-space:normal" ng-if="lesson.desc">{{lesson.desc}}</p>
-                    <a href='{{lesson.url}}' data-inline="true" data-mini="true" data-role="button">mp3</a>
+                    <p style="white-space:normal" ng-if="lesson.desc">{{lesson.desc}}</p>                    
+                    <a href='{{lesson.url}}' data-inline="true" data-mini="true" data-role="button">mp3</a>                  
+                    <!--<audio src='{{lesson.url |trusted}}' controls/>-->
                     <a href='{{lesson.vocab}}' data-inline="true" data-mini="true" data-role="button">Transcript</a>
                 </li>
             </ul>
@@ -73,6 +74,11 @@
     <!-- /page -->
     <script type="text/javascript">
     var cpodApp = angular.module('cpodApp', []);
+
+    cpodApp.filter('trusted', ['$sce', function ($sce) {
+        return function(url) {
+            return $sce.trustAsResourceUrl(url);
+        };}]);
 
     cpodApp.controller('LessonListCtrl', function LessonListCtrl($scope, $http) {
         function getLessons(full) {
