@@ -10,6 +10,7 @@
     <script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
     <script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js"></script> 
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/ngInfiniteScroll/1.3.0/ng-infinite-scroll.min.js"></script>
     <style type="text/css">
     .ui-grid-a img {
         width: 100%;
@@ -28,7 +29,7 @@
             <h1>Cpod</h1>
         </div>
         <!-- /header -->
-        <button id="allBtn" ng-click="getAll()" data-role="button">All</button>
+        <!--<button id="allBtn" ng-click="getAll()" data-role="button">All</button>-->
         <button id="randomBtn" ng-click="getRandom()" data-role="button">Random</button>
         <div ng-show="loading">
             <my-widget />
@@ -43,14 +44,14 @@
                     <div class=ui-block-b style="width: 40% !important;" ng-click="getSearchLesson(search)"><a data-role="button" href='#'>Search</a></div>
                 </div>
             </form>
-            <select name="select-choice-0" id="select-choice-0" ng-model="selectfilter.level">
+            <select name="select-choice-0" id="select-choice-0" ng-model="selectfilter.level" ng-change="updateFilter()">
                 <option value="all">All level</option>
                 <option value="intermediate">Intermediate</option>
                 <option value="upper intermediate">Upper Intermediate</option>
                 <option value="advanced">Advanced</option>
                 <option value="media">Media</option>
             </select>
-            <ul id="lessonlist" data-role="listview" data-inset="true">
+            <ul id="lessonlist" data-role="listview" data-inset="true" infinite-scroll="loadMore()">
                 <li data-role="list-divider" ng-repeat-start="lesson in lessons | lessonFilter:selectfilter.level | orderBy:'id':true">
                 </li>
                 <li ng-repeat-end>
@@ -73,7 +74,8 @@
     <!-- /content -->
     <!-- /page -->
     <script type="text/javascript">
-    var cpodApp = angular.module('cpodApp', []);
+    var cpodApp = angular.module('cpodApp', ['infinite-scroll']);
+    var currPage = 1;
 
     cpodApp.filter('trusted', ['$sce', function ($sce) {
         return function(url) {
@@ -102,7 +104,7 @@
                 });
                 $scope.loading = false;
             } else {
-                setLatestPageLessons(1);                
+                setLatestPageLessons(currPage);                
             }
         }
 
@@ -128,14 +130,39 @@
                         }
 
                     })
-                    .get()
-                    .filter(function(e) {
-                        //console.log(e.level);
-                        return e.level.indexOf('Advanced') > -1 || e.level.indexOf('Intermediate') > -1;
-                        //return true;
-                    });
+                    .get()                    
             })
         }
+
+        function addPageLessons(page) {
+            $http.get("http://chinesepod.com/library/latest/?page=" + page).then(function(resp) {
+                $scope.loading = false;
+                var inddiv = $(resp.data).find(".media");
+
+                var moreLesson = inddiv.map(function(i, e) {
+                        var src = $(e).find("img").attr("src");
+                        var _src = src.replace(src.split('/')[7], "{f}");
+                        var _level = $(e).find("a[title]")[0].innerText.trim();
+                        var _id = src.split('/')[4];
+
+                        return {
+                            id: _id,
+                            img: src,
+                            title: $(e).find("h4 a")[0].innerText,
+                            level: _level,
+                            desc: $(e).find("p")[0].innerText,
+                            vocab: _src.replace("chinesepod.com.s3.amazonaws.com", "s3contents.chinesepod.com").replace("images", "pdf").replace("{f}", "chinesepod_" + getLessonLetter(_level) + _id + ".html"),
+                            url: _src.replace("images", "mp3").replace("{f}", "chinesepod_" + getLessonLetter(_level) + _id + "pr.mp3")
+                        }
+
+                    })
+                    .get()                    
+              
+                Array.prototype.push.apply($scope.lessons, moreLesson);
+            })
+        }
+
+
 
         function getRandom()
         {
@@ -183,12 +210,7 @@
                             }
 
                         })
-                        .get()
-                        .filter(function(e) {
-                            console.log(e.level);
-                            return e.level.indexOf('Advanced') > -1 || e.level.indexOf('Intermediate') > -1;
-                            //return true;
-                        });
+                        .get()                        
 
                     //console.log(resp.feed.entry);
                     //console.log($scope.lessons);
@@ -198,7 +220,7 @@
         }
 
         $scope.getRandom = function() {
-            getRandom();
+            getRandom();            
         };
 
         $scope.getAll = function() {
@@ -207,6 +229,21 @@
 
         $scope.getSearchLesson = function(search) {
             getSearchLesson(search);
+        };
+
+        $scope.loadMore = function() {
+            if($scope.search == '' && $scope.lessons && $scope.lessons.length > 0) {
+                currPage = currPage + 1;
+                addPageLessons(currPage);
+            }
+        };
+
+        $scope.updateFilter = function() {
+            $scope.lessons = $scope.lessons.filter(function(e) {
+                //console.log(e.level);
+                return e.level.indexOf('Advanced') > -1 || e.level.indexOf('Intermediate') > -1;
+                //return true;
+            });
         };
 
         getLessons(false);
