@@ -44,7 +44,7 @@
                     <div class=ui-block-b style="width: 40% !important;" ng-click="getSearchLesson(search)"><a data-role="button" href='#'>Search</a></div>
                 </div>
             </form>
-            <select name="select-choice-0" id="select-choice-0" ng-model="selectfilter.level" ng-change="updateFilter()">
+            <select name="select-choice-0" id="select-choice-0" ng-model="selectfilter.level">
                 <option value="all">All level</option>
                 <option value="intermediate">Intermediate</option>
                 <option value="upper intermediate">Upper Intermediate</option>
@@ -111,9 +111,9 @@
         function setLatestPageLessons(page) {
             $http.get("http://chinesepod.com/library/latest/?page=" + page).then(function(resp) {
                 $scope.loading = false;
-                var inddiv = $(resp.data).find(".media");
+                var inddiv = $(resp.data).find(".media").toArray();
 
-                $scope.lessons = inddiv.map(function(i, e) {
+                $scope.lessons = inddiv.map(function(e, i) {
                         var src = $(e).find("img").attr("src");
                         var _src = src.replace(src.split('/')[7], "{f}");
                         var _level = $(e).find("a[title]")[0].innerText.trim();
@@ -129,17 +129,20 @@
                             url: _src.replace("images", "mp3").replace("{f}", "chinesepod_" + getLessonLetter(_level) + _id + "pr.mp3")
                         }
 
-                    })
-                    .get()                    
+                    }).filter(function(e) {
+                        //console.log(e.level);
+                        return e.level.indexOf('Advanced') > -1 || e.level.indexOf('Intermediate') > -1;
+                        //return true;
+                    });              
             })
         }
 
         function addPageLessons(page) {
             $http.get("http://chinesepod.com/library/latest/?page=" + page).then(function(resp) {
                 $scope.loading = false;
-                var inddiv = $(resp.data).find(".media");
+                var inddiv = $(resp.data).find(".media").toArray();
 
-                var moreLesson = inddiv.map(function(i, e) {
+                var moreLesson = inddiv.map(function(e, i) {
                         var src = $(e).find("img").attr("src");
                         var _src = src.replace(src.split('/')[7], "{f}");
                         var _level = $(e).find("a[title]")[0].innerText.trim();
@@ -155,8 +158,11 @@
                             url: _src.replace("images", "mp3").replace("{f}", "chinesepod_" + getLessonLetter(_level) + _id + "pr.mp3")
                         }
 
-                    })
-                    .get()                    
+                    }).filter(function(e) {
+                        //console.log(e.level);
+                        return e.level.indexOf('Advanced') > -1 || e.level.indexOf('Intermediate') > -1;
+                        //return true;
+                    });                                 
               
                 Array.prototype.push.apply($scope.lessons, moreLesson);
             })
@@ -236,15 +242,7 @@
                 currPage = currPage + 1;
                 addPageLessons(currPage);
             }
-        };
-
-        $scope.updateFilter = function() {
-            $scope.lessons = $scope.lessons.filter(function(e) {
-                //console.log(e.level);
-                return e.level.indexOf('Advanced') > -1 || e.level.indexOf('Intermediate') > -1;
-                //return true;
-            });
-        };
+        };       
 
         getLessons(false);
         $scope.selectfilter = {};
