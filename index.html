@@ -201,9 +201,9 @@
 
                     $scope.lessons = inddiv.map(function(i, e) {
                             var src = $(e).find("img").attr("src");
-                            var _src = src.replace(src.split('/')[6], "{f}");
+                            var _src = src.replace(src.split('/')[7], "{f}");
                             var _level = $(e).find("a[title]")[0].innerText.trim();
-                            var _id = src.split('/')[3];
+                            var _id = src.split('/')[4];
 
                             return {
                                 id: _id,
